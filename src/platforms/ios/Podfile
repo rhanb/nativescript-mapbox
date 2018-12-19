@@ -1,3 +1,4 @@
 platform :ios, '9.0'
 
-pod 'Mapbox-iOS-SDK', '~> 4.4.1'
+pod 'Mapbox-iOS-SDK', '~> 4.7'
+pod 'MapboxNavigation', '~> 0.26.0'

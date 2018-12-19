@@ -36,11 +36,11 @@ export { MapStyle };
 
 let _markers = [];
 let _markerIconDownloadCache = [];
-let _mapView: MGLMapView;
+let _mapView: MBNavigationMapView;
 let _mapbox: any = {};
 let _delegate: any;
 
-const _setMapboxMapOptions = (mapView: MGLMapView, settings) => {
+const _setMapboxMapOptions = (mapView: MBNavigationMapView, settings) => {
   mapView.logoView.hidden = settings.hideLogo;
   mapView.attributionButton.hidden = settings.hideAttribution;
   mapView.compassView.hidden = settings.hideCompass;
@@ -91,28 +91,85 @@ const _getMapStyle = (input: any): NSURL => {
 };
 
 const _getTrackingMode = (input: UserTrackingMode): MGLUserTrackingMode => {
-  if (input === "FOLLOW") {
-    return MGLUserTrackingMode.Follow;
-  } else if (input === "FOLLOW_WITH_HEADING") {
-    return MGLUserTrackingMode.FollowWithHeading;
-  } else if (input === "FOLLOW_WITH_COURSE") {
-    return MGLUserTrackingMode.FollowWithCourse;
-  } else {
-    return MGLUserTrackingMode.None;
+  const trakingsModes = {
+    'FOLLOW': MGLUserTrackingMode.Follow,
+    'FOLLOW_WITH_HEADING': MGLUserTrackingMode.FollowWithHeading,
+    'FOLLOW_WITH_COURSE': MGLUserTrackingMode.FollowWithCourse,
+    'NONE': MGLUserTrackingMode.None
   }
+
+  return trakingsModes[input];
 };
 
 /*************** XML definition START ****************/
 export class MapboxView extends MapboxViewBase {
 
-  private mapView: MGLMapView;
+  drawRoute(route: MBRoute) {
+    if (!(route.coordinateCount > 0)) {
+      return;
+    }
+    // Convert the route’s coordinates into a polyline
+    const routeCoordinates = interop.Pointer(route.coordinates);
+    const polyline = MGLPolylineFeature.polylineWithCoordinatesCount(routeCoordinates, route.coordinateCount);
+    
+    // If there's already a route line on the map, reset its shape to the new route
+  
+    let source = (this.mapView.style.sourceWithIdentifier('route-source') as MGLShapeSource);
+    if (source) {
+      source.shape = polyline;
+    } else {
+      source = MGLShapeSource.alloc().initWithIdentifierFeaturesOptions("route-source", NSArray.arrayWithArray(([polyline] as any)), null);
+    }
+    
+    // Customize the route line color and width
+    const lineStyle = MGLLineStyleLayer.alloc().initWithIdentifierSource("route-style", source);
+    lineStyle.lineColor = NSExpression.expressionForConstantValue({
+      colorLiteral: {
+        red: 0.1897518039,
+        green: 0.3010634184,
+        blue: 0.7994888425,
+        alpha: 1
+      }
+    });
+    lineStyle.lineWidth = NSExpression.expressionForConstantValue(3);
+    
+    // Add the source and style layer of the route line to the map
+    this.getNativeMapView().style.addSource(source);
+    this.getNativeMapView().style.addLayer(lineStyle);
+  }
+
+  calculateRoute(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D, completion?) {
+
+
+    // Coordinate accuracy is the maximum distance away from the waypoint that the route may still be considered viable, measured in meters. Negative values indicate that a indefinite number of meters away from the route and still be considered viable.
+    // const origin = MBWaypoint.alloc().initWithCoordinateCoordinateAccuracyName(from, -1, "Start");
+    // const destination = MBWaypoint.alloc().initWithCoordinateCoordinateAccuracyName(to, -1, "Finish");
+  
+    // Specify that the route is intended for automobiles avoiding traffic
+    // const options = new MBNavigationRouteOptions({
+    //   waypoints: <NSArray<MBWaypoint>>NSArray.arrayWithArray(([origin, destination] as any)),
+    //   profileIdentifier: MBDirectionsProfileIdentifierAutomobileAvoidingTraffic
+    // });
+  
+    // Generate the route object and draw it on the map
+    console.dir(this.directions);
+    // const _ = this.directions.calculateDirectionsWithOptionsCompletionHandler((options as MBRouteOptions), (p1: NSArray<MBWaypoint>, p2: NSArray<MBRoute>, p3: NSError) => {
+    //   this.directionsRoute = p2.firstObject;
+    //   this.drawRoute(this.directionsRoute);
+    // });
+  }
+
+  private mapView: MBNavigationMapView;
   private delegate: MGLMapViewDelegate;
+  directionsRoute: MBRoute;
+  directions: MBDirections;
 
   getNativeMapView(): any {
     return this.mapView;
   }
 
   public createNativeView(): Object {
+    console.log('createNativeView?');
     let v = super.createNativeView();
     setTimeout(() => {
       this.initMap();
@@ -122,11 +179,15 @@ export class MapboxView extends MapboxViewBase {
 
   initMap(): void {
     if (!this.mapView && this.config.accessToken) {
+      console.log('initMap');
       this.mapbox = new Mapbox();
       let settings = Mapbox.merge(this.config, Mapbox.defaults);
       let drawMap = () => {
         MGLAccountManager.accessToken = settings.accessToken;
-        this.mapView = MGLMapView.alloc().initWithFrameStyleURL(CGRectMake(0, 0, this.nativeView.frame.size.width, this.nativeView.frame.size.height), _getMapStyle(settings.style));
+        this.directions = new MBDirections({
+          accessToken: settings.accessToken
+        });
+        this.mapView = MBNavigationMapView.alloc().initWithFrameStyleURL(CGRectMake(0, 0, this.nativeView.frame.size.width, this.nativeView.frame.size.height), _getMapStyle(settings.style));
         this.mapView.delegate = this.delegate = MGLMapViewDelegateImpl.new().initWithCallback(() => {
           this.notify({
             eventName: MapboxViewBase.mapReadyEvent,
@@ -141,6 +202,20 @@ export class MapboxView extends MapboxViewBase {
             map: this,
             ios: this.mapView
           });
+
+
+            // console.log('draw map');
+            // this.mapbox.setOnMapLongClickListener((data: LatLng) => {
+            //   console.log('my long click listener');
+            //   this.calculateRoute({
+            //     latitude: 52.3602160,
+            //     longitude: 4.8891680
+            //   }, {
+            //     latitude: 51.3602160,
+            //     longitude: 5.8891680
+            //   })
+            // });
+            
         });
         _setMapboxMapOptions(this.mapView, settings);
         _markers = [];

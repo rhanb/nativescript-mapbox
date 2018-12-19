@@ -2,7 +2,7 @@ import * as observable from "tns-core-modules/data/observable";
 import * as pages from "tns-core-modules/ui/page";
 import { Color } from "tns-core-modules/color";
 import { HelloWorldModel } from "./main-view-model";
-import { MapboxViewApi, LatLng } from "nativescript-mapbox";
+import { MapboxViewApi, LatLng, UserLocation } from "nativescript-mapbox";
 
 // Event handler for Page 'loaded' event attached in main-page.xml
 export function pageLoaded(args: observable.EventData) {
@@ -29,7 +29,22 @@ function onMapReady(args) {
 
   map.setOnMapClickListener((point: LatLng) => console.log(`Map tapped: ${JSON.stringify(point)}`));
 
-  map.setOnMapLongClickListener((point: LatLng) => console.log(`Map longpressed: ${JSON.stringify(point)}`));
+  map.getUserLocation()
+    .then((userLocation: UserLocation) => {
+      map.setOnMapLongClickListener((point: LatLng) => {
+        console.log(`Map longpressed: ${JSON.stringify(point)}`);
+        (map as any).calculateRoute({
+          latitude: userLocation.location.lat,
+          longitude: userLocation.location.lng
+        }, {
+          latitude: point.lat,
+          longitude: point.lng
+        });
+      });
+    })
+    .catch((error) => {
+      console.log(JSON.stringify(error));
+    });
 
   // this works perfectly fine, but generates a lot of noise
   // map.setOnScrollListener((point?: LatLng) => console.log(`Map scrolled: ${JSON.stringify(point)}`));
@@ -38,22 +53,22 @@ function onMapReady(args) {
   // map.setMapStyle("~/OSM-map-style.json");
 
   // .. or use the convenience methods exposed on args.map, for instance:
-  map.addMarkers([
-    {
-      id: 2,
-      lat: 52.3602160,
-      lng: 4.8891680,
-      title: 'One-line title here', // no popup unless set
-      subtitle: 'Really really nice location',
-      iconPath: 'res/markers/green_pin_marker.png',
-      onTap: () => {
-        console.log("'Nice location' marker tapped");
-      },
-      onCalloutTap: () => {
-        console.log("'Nice location' marker callout tapped");
-      }
-    }]
-  );
+  // map.addMarkers([
+  //   {
+  //     id: 2,
+  //     lat: 52.3602160,
+  //     lng: 4.8891680,
+  //     title: 'One-line title here', // no popup unless set
+  //     subtitle: 'Really really nice location',
+  //     iconPath: 'res/markers/green_pin_marker.png',
+  //     onTap: () => {
+  //       console.log("'Nice location' marker tapped");
+  //     },
+  //     onCalloutTap: () => {
+  //       console.log("'Nice location' marker callout tapped");
+  //     }
+  //   }]
+  // );
 
   setTimeout(() => {
     map.setViewport(
@@ -74,52 +89,52 @@ function onMapReady(args) {
   //   map.setMapStyle(MapStyle.DARK);
   // }, 6000);
 
-  setTimeout(() => {
-    map.addPolyline({
-      id: 10,
-      color: new Color("yellow"),
-      points: [
-        {
-          lat: 52.4,
-          lng: 5
-        },
-        {
-          lat: 51.9,
-          lng: 5.1
-        },
-        {
-          lat: 51.8,
-          lng: 4.95
-        }
-      ]
-    });
-  }, 10000);
+  // setTimeout(() => {
+  //   map.addPolyline({
+  //     id: 10,
+  //     color: new Color("yellow"),
+  //     points: [
+  //       {
+  //         lat: 52.4,
+  //         lng: 5
+  //       },
+  //       {
+  //         lat: 51.9,
+  //         lng: 5.1
+  //       },
+  //       {
+  //         lat: 51.8,
+  //         lng: 4.95
+  //       }
+  //     ]
+  //   });
+  // }, 10000);
 
-  setTimeout(() => {
-    map.setCenter({
-      lat: 52.4820,
-      lng: 5.1087,
-      animated: true
-    });
-  }, 11000);
+  // setTimeout(() => {
+  //   map.setCenter({
+  //     lat: 52.4820,
+  //     lng: 5.1087,
+  //     animated: true
+  //   });
+  // }, 11000);
 
-  setTimeout(() => {
-    map.setZoomLevel({
-      level: 7,
-      animated: true
-    });
-  }, 16000);
+  // setTimeout(() => {
+  //   map.setZoomLevel({
+  //     level: 7,
+  //     animated: true
+  //   });
+  // }, 16000);
 
   // setTimeout(() => {
   //   map.removeMarkers([2]);
   // }, 10000);
 
-  setTimeout(() => {
-    map.setTilt({
-      tilt: 25,
-      duration: 2500
-    });
-  }, 21000);
+  // setTimeout(() => {
+  //   map.setTilt({
+  //     tilt: 25,
+  //     duration: 2500
+  //   });
+  // }, 21000);
 
   // setTimeout(() => {
   //   map.animateCamera({
@@ -133,9 +148,9 @@ function onMapReady(args) {
   //   });
   // }, 14000);
 
-  setTimeout(() => {
-    map.removePolylines([10]);
-  }, 24000);
+  // setTimeout(() => {
+  //   map.removePolylines([10]);
+  // }, 24000);
 
   // this works just fine, but it interferes with the programmatic map so not doing this in the demo
   // setTimeout(() => {

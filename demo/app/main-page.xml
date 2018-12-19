@@ -4,19 +4,25 @@
 
       <TabViewItem title="By XML">
         <TabViewItem.view>
-          <GridLayout columns="*, *" rows="110, *, 160" horizontalAlignment="stretch">
+          <GridLayout columns="*" rows="*" horizontalAlignment="stretch">
             <ContentView row="0" style="margin-right: 3; border-color: #fff">
               <map:MapboxView
+                  delay="2000"
                   latitude="52.3702160"
                   longitude="4.8951680"
-                  zoomLevel="3"
-                  mapStyle="~/OSM-map-style.json"
-                  hideAttribution="true"
+                  zoomLevel="7"
+                  mapStyle="streets"
+                  mapReady="onMapReady"
+                  locationPermissionGranted="onLocationPermissionGranted"
+                  locationPermissionDenied="onLocationPermissionDenied"
+                  showUserLocation="true"
+                  hideLogo="true"
                   hideCompass="false"
+                  hideAttribution="true"
                   accessToken="sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw">
               </map:MapboxView>
             </ContentView>
-            <ContentView row="0" col="1" style="margin-left: 3; border-color: #fff">
+            <!-- <ContentView row="0" col="1" style="margin-left: 3; border-color: #fff">
               <map:MapboxView
                   delay="invalid"
                   latitude="52.3702160"
@@ -72,7 +78,7 @@
                   mapStyle="traffic_day"
                   accessToken="sk.eyJ1IjoiZWRkeXZlcmJydWdnZW4iLCJhIjoia1JpRW82NCJ9.OgnvpsKzB3GJhzyofQNUBw">
               </map:MapboxView>
-            </ContentView>
+            </ContentView> -->
           </GridLayout>
         </TabViewItem.view>
       </TabViewItem>
